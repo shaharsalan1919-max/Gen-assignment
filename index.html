@@ -1,116 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AI Code Reviewer</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<style>
-    body {
-        font-family: system-ui, sans-serif;
-        margin: 2rem;
-        background: #f9f9f9;
-    }
-    h2 { color: #333; }
-    label.file-upload {
-        background: #6c757d; color: white; border: none;
-        padding: 10px 15px; border-radius: 4px;
-        cursor: pointer; display: inline-block;
-    }
-    input[type="file"] { display: none; }
-    textarea {
-        width: 100%; height: 300px; box-sizing: border-box;
-        font-family: monospace; font-size: 1rem;
-        border: 1px solid #ccc; border-radius: 4px;
-        padding: 10px; margin-top: 15px;
-    }
-    button {
-        background: #007aff; color: white; border: none;
-        padding: 10px 15px; border-radius: 4px;
-        cursor: pointer; margin-top: 10px;
-    }
-    #review-output {
-        margin-top: 1.5rem; background: #fff;
-        border: 1px solid #eee; border-radius: 4px;
-        padding: 0.5rem 1.5rem; line-height: 1.6;
-    }
-    /* This styles the HTML rendered from Markdown */
-    #feedbackText h3 {
-        margin-top: 1.5rem; margin-bottom: 0.5rem;
-        padding-bottom: 5px; border-bottom: 1px solid #eee;
-    }
-    #feedbackText li { margin-bottom: 0.75rem; }
-    #feedbackText code { 
-        background-color: #eee; padding: 2px 4px; 
-        border-radius: 3px; font-family: monospace; 
-    }
-</style>
+
+  <link rel="stylesheet" href="./styles.css" />
 </head>
+
 <body>
-  <h2>AI-Powered Code Reviewer</h2>
-  <p>Paste your code below or upload a file to get AI-based feedback.</p>
+  <nav class="navbar navbar-dark bg-dark shadow-sm">
+    <div class="container-fluid">
+      <span class="navbar-brand mb-0 h1">AI Code Reviewer</span>
+    </div>
+  </nav>
 
-  <label for="fileInput" class="file-upload">Upload File</label>
-  <input type="file" id="fileInput" accept=".js,.py,.java,.c,.cpp,.txt" />
-  <span id="fileName">No file selected.</span>
+  <main class="main-container container-fluid">
+    <div class="row justify-content-center align-items-start g-4">
+      
+      <div class="col-12 col-lg-6">
+        <div class="card code-box">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="m-0">Paste Your Code</h5>
+            <div class="file-section">
+              <label for="fileInput" class="file-upload">Upload File</label>
+              <input type="file" id="fileInput" accept=".js,.py,.java,.c,.cpp,.txt" hidden />
+              <small id="fileName" class="file-name text-muted ms-2">No file selected</small>
+            </div>
+          </div>
+          <div class="card-body">
+            <textarea id="codeInput" class="form-control code-textarea"
+              placeholder="Paste or upload your code here..."></textarea>
+          </div>
+          <div class="card-footer text-end">
+            <button id="reviewButton" class="btn btn-review">Review Code</button>
+          </div>
+        </div>
+      </div>
 
-  <textarea id="codeInput" placeholder="Paste your code here..."></textarea>
-  <button id="reviewButton">Review Code</button>
+      <div class="col-12 col-lg-6">
+        <div class="card feedback-box">
+          <div class="card-header">
+            <h5 class="m-0">AI Feedback</h5>
+          </div>
+          <div class="card-body" id="feedbackText">Your review will appear here...</div>
+        </div>
+      </div>
+    </div>
+  </main>
 
-  <h3>AI Feedback:</h3>
-  <div id="review-output">
-    <div id="feedbackText">Your review will appear here...</div>
-  </div>
+  <footer class="footer text-center">
+    <p>Tip: Small files (up to a few KB) work best. For large projects, review modules individually.</p>
+  
+  </footer>
+
 
   <script>
     const reviewButton = document.getElementById('reviewButton');
     const codeInput = document.getElementById('codeInput');
-    const feedbackText = document.getElementById('feedbackText'); 
+    const feedbackText = document.getElementById('feedbackText');
     const fileInput = document.getElementById('fileInput');
     const fileName = document.getElementById('fileName');
 
-    fileInput.addEventListener('change', (event) => {
-      const file = event.target.files[0];
-      if (!file) return;
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) {
+        fileName.textContent = 'No file selected';
+        return;
+      }
       const reader = new FileReader();
-      reader.onload = (e) => {
-        codeInput.value = e.target.result;
+      reader.onload = (ev) => {
+        codeInput.value = ev.target.result;
         fileName.textContent = file.name;
       };
       reader.readAsText(file);
     });
-
     reviewButton.addEventListener('click', async () => {
-      const code = codeInput.value;
-      if (!code.trim()) {
+      const code = codeInput.value.trim();
+      if (!code) {
         feedbackText.innerHTML = 'Please paste or upload some code to review.';
+        feedbackText.classList.add('error-message');
         return;
       }
 
-      feedbackText.innerHTML = 'Analyzing...';
+      feedbackText.innerHTML = '<span class="loading-text">Analyzing your code...</span>';
+      feedbackText.classList.remove('error-message');
 
       try {
         const response = await fetch('http://localhost:3001/review', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code })
+          body: JSON.stringify({ code }),
         });
 
-        if (!response.ok) {
-            const errData = await response.json();
-            throw new Error(errData.details || `HTTP error! status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`Request failed with status code ${response.status}`);
 
         const data = await response.json();
-        
-        // **** THIS IS THE CORRECTED LINE ****
-        feedbackText.innerHTML = marked.parse(data.review); // Removed the 'open()'
-
-      } catch (error) {
-        console.error('Error:', error);
-        feedbackText.innerHTML = `<strong>Error:</strong> ${error.message}`;
+        feedbackText.innerHTML = marked.parse(data.review);
+      } catch (err) {
+        feedbackText.innerHTML = `<span class="error-message"> ${err.message}</span>`;
       }
     });
   </script>
 </body>
+
 </html>
