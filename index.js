@@ -45,19 +45,8 @@ app.post("/review", async (req, res) => {
   try {
     const userCode = req.body.code || "";
 
-    const result = await genAI.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [
-        {
-          role: "user",
-          parts: [
-            {
-              text: `${prompt}\n\nHere is the code:\n${userCode}`,
-            },
-          ],
-        },
-      ],
-    });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+    const result = await model.generateContent(`${prompt}\n\nHere is the code:\n${userCode}`);
 
     console.log("Raw API result for debugging:");
     console.dir(result, { depth: null });

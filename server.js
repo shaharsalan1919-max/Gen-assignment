@@ -3,7 +3,7 @@ const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
-const { GoogleGenAI } = require("@google/genai"); 
+const { GoogleGenerativeAI } = require("@google/generative-ai"); 
 
 const app = express();
 app.use(cors());
@@ -16,7 +16,7 @@ if (!apiKey) {
   console.error("error: GEMINI_API_KEY not found. Please create a .env file.");
   process.exit(1);
 }
-const genAI = new GoogleGenAI(apiKey);
+const genAI = new GoogleGenerativeAI(apiKey);
 
 const prompt = `
 You are an AI Code Reviewer. Review the given code snippet and provide concise feedback under these three categories:
@@ -48,15 +48,8 @@ app.post("/review", async (req, res) => {
 
     const payloadText = `${prompt}\n${userCode}`;
 
-    const result = await genAI.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: payloadText }],
-        },
-      ],
-    });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+    const result = await model.generateContent(payloadText);
     async function extractText(resp) {
       if (!resp) return null;
       if (resp.response) {

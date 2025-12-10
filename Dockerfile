@@ -1,32 +1,31 @@
-# --- STAGE 1: Build Stage (Uses a larger image to install dependencies) ---
-FROM node:20-alpine AS builder
+FROM node:18-alpine
 
-# Set the working directory inside the container
+# Set the working directory in the container
 WORKDIR /app
 
 # Copy package.json and package-lock.json first to leverage Docker caching
 COPY package*.json ./
 
 # Install project dependencies
-RUN npm install
+RUN npm ci --only=production
 
 # Copy the rest of the application code
 COPY . .
 
-# --- STAGE 2: Production Stage (Uses a minimal image for the final runtime) ---
-FROM node:20-alpine AS final
+# Create a non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 && \
+    chown -R nodejs:nodejs /app
 
-# Set the working directory
-WORKDIR /app
+# Switch to non-root user
+USER nodejs
 
-# Copy only the necessary files from the builder stage
-# This includes node_modules and the source code
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app .
+# Expose the port the app runs on
+EXPOSE 3001
 
-# Define the port the container will listen on (adjust if your project uses a different port)
-EXPOSE 3000
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3001', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 # The command to run the application when the container starts
-# Assumes your main application file is named index.js or server.js and is run via 'npm start'
-CMD [ "npm", "start" ]
+CMD [ "node", "server.js" ]
