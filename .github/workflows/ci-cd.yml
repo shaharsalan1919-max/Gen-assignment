@@ -11,7 +11,7 @@ on:
 # 2. Environment Variables: Centralize key information
 env:
   DOCKER_REGISTRY: docker.io
-  DOCKER_IMAGE_NAME: ${{ github.repository }} # This resolves to shershahkx/Gen_AI_Mid_Term
+  DOCKER_IMAGE_NAME: ${{ github.event.repository.name }} # This resolves to shershahkx/Gen_AI_Mid_Term
   DOCKER_USERNAME_SECRET: ${{ secrets.DOCKER_USERNAME }}
   DOCKER_PASSWORD_SECRET: ${{ secrets.DOCKER_PASSWORD }}
   
