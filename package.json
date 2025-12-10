@@ -1,5 +1,5 @@
 {
-  "name": "ai-code-reviewer",
+  "name": "ao-code-reviewer",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -7,7 +7,7 @@
     "start": "node server.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "Muhammadtalha003",
   "license": "ISC",
   "dependencies": {
     "@google/genai": "^1.28.0",
@@ -17,5 +17,13 @@
     "dotenv": "^17.2.3",
     "express": "^5.1.0"
   },
-  "description": ""
+  "description": "none",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shershahkx/Gen_AI_Mid_Term.git"
+  },
+  "bugs": {
+    "url": "https://github.com/shershahkx/Gen_AI_Mid_Term/issues"
+  },
+  "homepage": "https://github.com/shershahkx/Gen_AI_Mid_Term#readme"
 }

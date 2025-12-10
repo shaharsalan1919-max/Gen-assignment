@@ -1,41 +1,32 @@
-# --- Stage 1: Builder Stage ---
-# Use a specific version of Node.js for consistency
+# --- STAGE 1: Build Stage (Uses a larger image to install dependencies) ---
 FROM node:20-alpine AS builder
 
-# Set working directory
+# Set the working directory inside the container
 WORKDIR /app
 
-# Copy package files first to leverage Docker caching for dependencies
+# Copy package.json and package-lock.json first to leverage Docker caching
 COPY package*.json ./
 
-# Install dependencies, prioritizing production dependencies if applicable
+# Install project dependencies
 RUN npm install
 
-# Copy all source code
+# Copy the rest of the application code
 COPY . .
 
-# Run the build command (e.g., if using React/Vue/TypeScript)
-# If your project is a pure backend server, you might skip this line or use 'npm run build'
-# RUN npm run build 
+# --- STAGE 2: Production Stage (Uses a minimal image for the final runtime) ---
+FROM node:20-alpine AS final
 
-
-# --- Stage 2: Production Stage (Final, Lightweight Image) ---
-FROM node:20-alpine AS production
-
-# Set working directory
+# Set the working directory
 WORKDIR /app
 
 # Copy only the necessary files from the builder stage
-# This includes node_modules and the application code
+# This includes node_modules and the source code
 COPY --from=builder /app/node_modules ./node_modules
-# Copy only the compiled code/final files if you used 'npm run build' above
-COPY --from=builder /app ./
+COPY --from=builder /app .
 
-# If you need to copy specific output folders (e.g., a 'dist' folder for compiled assets), 
-# replace the line above with specific COPY commands.
+# Define the port the container will listen on (adjust if your project uses a different port)
+EXPOSE 3000
 
-# Expose the port your Node.js application runs on (e.g., 3000, 8080)
-EXPOSE 3000 
-
-# Define the command to start the application (adjust 'server.js' to your entry point)
-CMD ["node", "index.js"]
+# The command to run the application when the container starts
+# Assumes your main application file is named index.js or server.js and is run via 'npm start'
+CMD [ "npm", "start" ]

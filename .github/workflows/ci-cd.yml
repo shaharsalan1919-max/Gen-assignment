@@ -1,0 +1,65 @@
+name: Node.js Docker CI/CD
+
+# 1. Configuration: Define when the workflow runs
+on:
+  # Trigger on every push to the 'main' branch
+  push:
+    branches: [ main ]
+  # Allow manual execution from the GitHub Actions tab
+  workflow_dispatch:
+
+# 2. Environment Variables: Centralize key information
+env:
+  DOCKER_REGISTRY: docker.io
+  DOCKER_IMAGE_NAME: ${{ github.repository }} # This resolves to shershahkx/Gen_AI_Mid_Term
+  DOCKER_USERNAME_SECRET: ${{ secrets.DOCKER_USERNAME }}
+  DOCKER_PASSWORD_SECRET: ${{ secrets.DOCKER_PASSWORD }}
+  
+# 3. Jobs: Define the pipeline stages
+jobs:
+  # CI Job: Build and Push Docker Image
+  build-and-push:
+    name: Build & Push to Docker Hub
+    runs-on: ubuntu-latest # The type of runner (server) to execute the job
+    
+    steps:
+      - name: 📦 Checkout Repository Code
+        # This action clones your repository so the runner can access the files (Dockerfile, code, etc.)
+        uses: actions/checkout@v4
+
+      - name: 🛠️ Set up Docker Buildx
+        # Enables advanced Docker build features, like multi-platform builds and caching
+        uses: docker/setup-buildx-action@v3
+      
+      - name: 🔑 Log in to Docker Hub
+        # Uses the secrets you configured to securely log into the registry
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.DOCKER_USERNAME_SECRET }}
+          password: ${{ env.DOCKER_PASSWORD_SECRET }}
+
+      - name: 🏗️ Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          # Tags the image with both 'latest' and the unique Git commit SHA for versioning
+          tags: |
+            ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_USERNAME_SECRET }}/${{ env.DOCKER_IMAGE_NAME }}:latest
+            ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_USERNAME_SECRET }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # CD Job: Deployment Placeholder (Runs only if the build-and-push job succeeds)
+  deploy:
+    name: Deploy to Server (Placeholder)
+    needs: build-and-push # Ensures deployment only happens if the image was successfully built and pushed
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 🚀 Deployment Simulation
+        run: |
+          echo "Deployment steps would go here."
+          echo "Example: SSHing into a server, running 'docker pull' for the new image, and restarting the container."
+          echo "Image ${{ env.DOCKER_USERNAME_SECRET }}/${{ env.DOCKER_IMAGE_NAME }}:latest is ready for deployment."
+          echo "Assignment complete: CI/CD Pipeline structure is defined."
